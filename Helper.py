@@ -127,4 +127,26 @@ def daily_timeline(Selected_user, df):
 
     return daily_timeline
 
+def week_activity_map(Selected_user, df):
+    if Selected_user != 'overall':
+     df = df[df['user'] == Selected_user]
+    return df['day_name'].value_counts()
 
+
+
+def month_activity_map(Selected_user, df):
+    if Selected_user != 'overall':
+        df = df[df['user'] == Selected_user]
+
+    return df['month'].value_counts()
+
+
+def activity_heatmap(Selected_user, df):
+    if Selected_user != 'overall':
+        df = df[df['user'] == Selected_user]
+
+
+    user_heatmap = df.pivot_table(index='day_name', columns='period', values='message', aggfunc='count').fillna(0)
+
+
+    return user_heatmap
