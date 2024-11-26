@@ -88,6 +88,68 @@ if uploaded_file is not None:
             st.pyplot(fig)
         else:
             st.write("No data to show for the selected user in Daily Timeline.")
+        # weekly activity
+        activity_map = '<br><br><u><p style="font-family:Roboto; color:#ca124d; font-size: 40px; font-weight: bold">Activity Map</p></u>'
+        st.markdown(activity_map, unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-family:Roboto fax; color:#ffa81a; font-size: 15px; font-weight: bold">This stats shows which day and month of your chats are busy</p>',
+            unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+
+        with col1:
+            most_busy_day = '<p style="font-family:georgia; color:#12ca7d; font-size: 30px; font-weight: bold">Most Busy Day</p>'
+            st.markdown(most_busy_day, unsafe_allow_html=True)
+            busy_day = Helper.week_activity_map(Selected_user, df)
+            fig, ax = plt.subplots()
+            ax.bar(busy_day.index, busy_day.values, color='pink')
+            plt.xticks(rotation='vertical')
+            plt.title("Most busy day in a week")
+            plt.xlabel("Days")
+            plt.ylabel("Number of chats")
+            for axis in ['top', 'bottom', 'left', 'right']:
+                ax.spines[axis].set_linewidth(3)
+                ax.spines[axis].set_color("orange")
+                ax.spines[axis].set_zorder(5)
+            st.pyplot(fig)
+
+        with col2:
+            most_busy_month = '<p style="font-family:Roboto; color:#12ca7d; font-size: 30px; font-weight: bold">Most Busy Month</p>'
+            st.markdown(most_busy_month, unsafe_allow_html=True)
+            busy_month = Helper.month_activity_map(Selected_user, df)
+            fig, ax = plt.subplots()
+            ax.bar(busy_month.index, busy_month.values, color='purple')
+            plt.xticks(rotation='vertical')
+            plt.title("Most busy month")
+            plt.xlabel("Months")
+            plt.ylabel("Number of chats")
+            for axis in ['top', 'bottom', 'left', 'right']:
+                ax.spines[axis].set_linewidth(3)
+                ax.spines[axis].set_color("orange")
+                ax.spines[axis].set_zorder(5)
+            st.pyplot(fig)
+
+        # Weekly hours' activity map
+        weekly_hours_activity_map = '<br><br><u><p style="font-family:Roboto; color:#ca124d; font-size: 40px; font-weight: bold">Weekly Hours Activity Map</p></u>'
+        st.markdown(weekly_hours_activity_map, unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-family:Roboto fax; color:#ffa81a; font-size: 15px; font-weight: bold">This map shows the active hours of the  group across the week</p>',
+            unsafe_allow_html=True)
+        user_heatmap = Helper.activity_heatmap(Selected_user, df)
+        fig, ax = plt.subplots(figsize=(8, 4))
+        if not user_heatmap.empty:
+            ax = sns.heatmap(user_heatmap)
+            st.pyplot(fig)
+        else:
+            st.write("No activity data available for the selected user.")
+
+            plt.title("Weekly Hours Activity Map")
+            plt.xlabel("Time")
+            plt.ylabel("Number of chats")
+            for axis in ['top', 'bottom', 'left', 'right']:
+                ax.spines[axis].set_linewidth(3)
+                ax.spines[axis].set_color("orange")
+                ax.spines[axis].set_zorder(5)
+            st.pyplot(fig)
 
 
         #finding the busiest users  in the group
