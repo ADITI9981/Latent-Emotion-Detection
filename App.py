@@ -3,6 +3,7 @@ import Preprocessor,Helper
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
+import seaborn as sns
 st.sidebar.title("Latent Emotion Detector ")
 
 uploaded_file = st.sidebar.file_uploader("choose a file")
@@ -43,9 +44,25 @@ if uploaded_file is not None:
         timeline = Helper.monthly_timeline(Selected_user, df)
 
         if not timeline.empty:
-            fig, ax = plt.subplots()
-            ax.plot(timeline['time'], timeline['message'], color='purple')
-            plt.xticks(rotation='vertical')
+            fig, ax = plt.subplots(figsize=(12, 6))  # Adjust figure size for better visibility
+
+            # Plot the timeline
+            ax.plot(timeline['time'], timeline['message'], color='purple', marker='o')
+
+            # Dynamically reduce x-ticks to avoid clutter
+            x_ticks = timeline['time'][::6]  # Show every 6th month (adjust as needed)
+            ax.set_xticks(x_ticks)
+            ax.set_xticklabels(x_ticks, rotation=45, ha='right', fontsize=9)  # Rotate for readability
+
+            # Add labels and title
+            ax.set_xlabel("Month-Year")
+            ax.set_ylabel("Number of Messages")
+            ax.set_title(f"Monthly Messages Timeline for {Selected_user}")
+
+            # Adjust layout to avoid clipping
+            plt.tight_layout()
+
+            # Display the plot
             st.pyplot(fig)
         else:
             st.write("No data available for the Monthly Timeline.")
@@ -56,17 +73,22 @@ if uploaded_file is not None:
 
         if not daily_timeline.empty:
             daily_timeline['datetime'] = pd.to_datetime(daily_timeline['datetime'], format='%Y-%m-%d')
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(daily_timeline['datetime'], daily_timeline['message'], color='blue', marker='o')
+
+            # Apply smoothing
+            daily_timeline['smoothed'] = daily_timeline['message'].rolling(window=7, center=True).mean()
+
+            fig, ax = plt.subplots(figsize=(12, 6))  # Increase graph size for readability
+            ax.plot(daily_timeline['datetime'], daily_timeline['smoothed'], color='blue', label='')
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))
             plt.xticks(rotation=45)
             ax.set_xlabel('Date')
-            ax.set_ylabel('Messages')
+            ax.set_ylabel('Number of Messages')
             ax.set_title(f"Daily Timeline for {Selected_user}")
-            fig.tight_layout()
+            plt.legend()
             st.pyplot(fig)
         else:
             st.write("No data to show for the selected user in Daily Timeline.")
+
 
         #finding the busiest users  in the group
         if Selected_user == 'overall':
