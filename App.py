@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
-from auth import signup_user, login_user, reset_password  # Import reset_password function
+from auth import signup_user, login_user, reset_password 
 from Preprocessor import preprocess
 from Helper import fetch_stats
 import Helper
@@ -66,8 +66,8 @@ st.markdown(
            font-size: 36px;
            font-weight: bold;
            color: black;  /* Black color */
-           text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.7);  /* Stronger black shadow */
-           letter-spacing: 1px;  /* Adds a bit of spacing between letters */
+           text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.7);  
+           letter-spacing: 1px;  
 }
 
 
@@ -440,7 +440,7 @@ elif page == "Analysis":
 
             # Add download button for Show Analysis results (CSV)
             st.sidebar.subheader("Download Analysis Results")
-            csv_analysis = analysis_df.to_csv(index=False)  # Convert analysis results to CSV
+            csv_analysis = analysis_df.to_csv(index=False)  
             st.sidebar.download_button(
                 label="Download Analysis Results CSV",
                 data=csv_analysis,
@@ -450,7 +450,7 @@ elif page == "Analysis":
 
         # Add download button for the original file data CSV
         st.sidebar.subheader("Download Results")
-        csv = df.to_csv(index=False)  # Convert DataFrame to CSV
+        csv = df.to_csv(index=False) 
         st.sidebar.download_button(
             label="Download Full Data CSV",
             data=csv,
