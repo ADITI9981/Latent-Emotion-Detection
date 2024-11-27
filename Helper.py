@@ -99,7 +99,7 @@ def emoji_helper(Selected_user,df):
 
     return emojis_df
 
-
+#monthly timeline
 def monthly_timeline(Selected_user, df):
     # Filter data based on the selected user
     if Selected_user == "overall":
@@ -114,7 +114,7 @@ def monthly_timeline(Selected_user, df):
     timeline['time'] = timeline.apply(lambda row: f"{row['month']}-{row['year']}", axis=1)
 
     return timeline
-
+# daily timeline
 def daily_timeline(Selected_user, df):
     # Filter data based on the selected user
     if Selected_user == "overall":
@@ -126,14 +126,14 @@ def daily_timeline(Selected_user, df):
     daily_timeline = filtered_df.groupby('datetime').count()['message'].reset_index()
 
     return daily_timeline
-
+#week activity map
 def week_activity_map(Selected_user, df):
     if Selected_user != 'overall':
      df = df[df['user'] == Selected_user]
     return df['day_name'].value_counts()
 
 
-
+#month activity map
 def month_activity_map(Selected_user, df):
     if Selected_user != 'overall':
         df = df[df['user'] == Selected_user]
