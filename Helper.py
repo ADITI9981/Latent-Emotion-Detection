@@ -62,7 +62,7 @@ def create_wordcloud(Selected_user,df):
 
 
 
-def most_common(selected_user,df):
+def most_common_words(selected_user,df):
 
     f = open('stop_hinglish.txt','r')
     stop_words = f.read()
