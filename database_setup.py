@@ -1,10 +1,10 @@
 import sqlite3
 
-# SQLite database ka connection establish karna
-conn = sqlite3.connect('users_data.db')  # Agar file nahi hai to yeh nayi file create karega
+#  To establish SQLite database connection
+conn = sqlite3.connect('users_data.db')  
 cursor = conn.cursor()
 
-# Ek table banayen login ke liye
+# Create Table For Login
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT
 )
 ''')
-conn.commit()  # Changes ko save karne ke liye
+conn.commit() 
 
-print("Database aur table successfully ban gaya!")
+print("Database aand table successfully Created!")
 
-# Database connection close karna
+# To close Database Connection
 conn.close()
