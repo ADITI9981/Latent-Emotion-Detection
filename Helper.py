@@ -5,7 +5,7 @@ from collections import Counter
 import emoji
 
 extract = URLExtract()
-
+#Top Statistics
 def fetch_stats(Selected_user,df):
 
     if Selected_user !='overall':
@@ -61,7 +61,7 @@ def create_wordcloud(Selected_user,df):
     return df_wc
 
 
-
+#most common words
 def most_common_words(selected_user,df):
 
     f = open('stop_hinglish.txt','r')
