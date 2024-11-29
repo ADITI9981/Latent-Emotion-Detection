@@ -5,10 +5,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
-from auth import signup_user, login_user, reset_password 
+from auth import signup_user, login_user, reset_password
 from Preprocessor import preprocess
 from Helper import fetch_stats
 import Helper
+import numpy as np
+import altair as alt
+import joblib
+import os
 
 # Database Path
 DB_PATH = "users.db"
@@ -69,73 +73,53 @@ st.markdown(
            text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.7);  
            letter-spacing: 1px;  
 }
-
-
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-
-
 # Create Navigation Sidebar
 st.sidebar.title("Latent Emotion Detection")
-page = st.sidebar.radio("Navigation", ["User Guide", "Login", "Signup", "Forgot Password", "File Upload", "Analysis"])
+page = st.sidebar.radio("Navigation", ["User Guide", "Login", "Signup", "Forgot Password", "File Upload", "Analysis",
+                                       "Text Emotion Detection"])
 
 # Sidebar icon (optional)
-st.sidebar.image("analy.png", use_container_width=True)
+st.sidebar.image("analy.png")
 
 # User Guide Page
 if page == "User Guide":
     st.title("📘 User Guide")
-
-    # Add the Emotion-Detection.png image only on the User Guide page
-    st.image("emoji.jpg", use_container_width=True)
-
-    st.markdown(
-        """
-        <h2 style="color:#3E64FF;">Welcome to Latent Emotion Detection!</h2>
-        <p>
-        This app allows you to analyze your WhatsApp chats and generate insights about emotions, activity trends, and more.
-        </p>
-        """,
-        unsafe_allow_html=True,
-    )
-    # Steps to Use the App
-    st.markdown(
-        """
+    st.image("emoji.jpg")
+    st.markdown("<h2 style='color:#3E64FF;'>Welcome to Latent Emotion Detection!</h2>", unsafe_allow_html=True)
+    st.markdown("""
         <h3 style="color:#3498db;">How to Use:</h3>
         <ul style="color:#2c3e50; line-height: 1.8;">
             <li><b style="color:#e74c3c;">Signup:</b><span style="color:#ffffff;"> Create your account to access features.</span></li>
             <li><b style="color:#8e44ad;">Login:</b><span style="color:#ffffff;"> Securely log in with your credentials.</span></li>
-            <li><b style="color:#16a085;">Upload:</b><span style="color:#ffffff;"> Upload your WhatsApp text file for processing.</span></li>
+            <li><b style="color:#16a085;">Upload:</b><span style="color:#ffffff;"> Upload your chat file for processing.</span></li>
             <li><b style="color:#f39c12;">Analyze:</b><span style="color:#ffffff;"> Gain insights into your chat data.</span></li>
         </ul>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Additional Details and Features
+    """, unsafe_allow_html=True)
+    #Additional Details and features
     st.subheader("Features")
     st.write("""- **User-based Analysis**: Analyze data for individual users or the overall chat.
                 - **Statistics**: View total messages, words, media shared, and links shared.
                 - **Monthly Timeline**: See the message activity trend over time.""")
-
     # Instructions for Exporting Data
     st.subheader("How to Export Data")
     st.write("""After analyzing your chat data, you can export the results to a file for further use.""")
 
     # Additional Guidelines
     st.subheader("Guidelines")
-    st.write("""- Ensure the WhatsApp chat file is in **text format** and not corrupted.
+    st.write("""- Ensure the chat file is in **text format** and not corrupted.
                 - The app works best with **clean data**. It's recommended to clean your chat export.""")
 
 # Login Page
 elif page == "Login":
     st.title("Login Page")
-
     username = st.text_input("Enter your username")
     password = st.text_input("Enter your password", type="password")
+    st.markdown("""<p><a href="#forgot-password">Forgot Password?</a></p>""", unsafe_allow_html=True)
     if st.button("Login"):
         if username and password:
             user_exists = login_user(username, password, DB_PATH)
@@ -165,8 +149,8 @@ elif page == "Forgot Password":
     username = st.text_input("Enter your username")
     new_password = st.text_input("Enter your new password", type="password")
     confirm_password = st.text_input("Confirm your new password", type="password")
+    if st.markdown('[Reset Password](#)', unsafe_allow_html=True):
 
-    if st.button("Reset Password"):
         if username and new_password and confirm_password:
             if new_password == confirm_password:
                 message = reset_password(username, new_password, DB_PATH)
@@ -183,51 +167,40 @@ elif page == "Forgot Password":
 elif page == "File Upload":
     st.title("Upload Data File")
     uploaded_file = st.file_uploader("Choose a file")
-
     if uploaded_file is not None:
         st.session_state.uploaded_file = uploaded_file
         st.success("File uploaded successfully! Proceed to the 'Analysis' page.")
-
-        # Open and resize the GIF using PIL
         img = Image.open('thankyou.gif')
         img = img.resize((800, 300))  # Resize to desired dimensions
-
-        # Display the resized GIF
         st.image(img)
 
 # Analysis Page
 elif page == "Analysis":
-        if 'logged_in' in st.session_state and st.session_state['logged_in']:
-            if 'uploaded_file' in st.session_state:
-                uploaded_file = st.session_state.uploaded_file
-                st.title("Data Analysis")
-                try:
-                    # Decode the uploaded file
-                    bytes_data = uploaded_file.getvalue()
-                    data = bytes_data.decode("utf-8")
+    if 'logged_in' in st.session_state and st.session_state['logged_in']:
+        if 'uploaded_file' in st.session_state:
+            uploaded_file = st.session_state.uploaded_file
+            st.title("Data Analysis")
+            try:
+                bytes_data = uploaded_file.getvalue()
+                data = bytes_data.decode("utf-8")
+                df = preprocess(data)
 
-                    # Preprocess the data
-                    df = preprocess(data)
-
-                    if 'user' in df.columns:
-                        # Add your analysis logic here...
-                        st.success("Analysis Complete! View the results below.")
-
-                        # Show dataframe only if it exists
-                        st.dataframe(df)
-                    else:
-                        st.error("The uploaded file does not contain a 'user' column.")
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-            else:
-                st.error("Please upload a file first in the 'File Upload' section.")
+                if 'user' in df.columns:
+                    st.success("Analysis Complete! View the results below.")
+                    st.dataframe(df)
+                else:
+                    st.error("The uploaded file does not contain a 'user' column.")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
         else:
-            st.warning("Please log in to access the analysis page.")
+            st.error("Please upload a file first in the 'File Upload' section.")
+    else:
+        st.warning("Please log in to access the analysis page.")
 
-        # Fetch unique users
-        user_list = df['user'].unique().tolist()
-        if 'group_notification' in user_list:
-            user_list.remove('group_notification')
+    # Fetch unique users
+    user_list = df['user'].unique().tolist()
+    if 'group_notification' in user_list:
+        user_list.remove('group_notification')
         user_list.sort()
         user_list.insert(0, "overall")
 
@@ -440,7 +413,7 @@ elif page == "Analysis":
 
             # Add download button for Show Analysis results (CSV)
             st.sidebar.subheader("Download Analysis Results")
-            csv_analysis = analysis_df.to_csv(index=False)  
+            csv_analysis = analysis_df.to_csv(index=False)
             st.sidebar.download_button(
                 label="Download Analysis Results CSV",
                 data=csv_analysis,
@@ -450,10 +423,80 @@ elif page == "Analysis":
 
         # Add download button for the original file data CSV
         st.sidebar.subheader("Download Results")
-        csv = df.to_csv(index=False) 
+        csv = df.to_csv(index=False)
         st.sidebar.download_button(
             label="Download Full Data CSV",
             data=csv,
             file_name="chat_analysis_full_data.csv",
             mime="text/csv"
         )
+
+# Text Emotion Detection Page
+elif page == "Text Emotion Detection":
+    # Load the pre-trained model
+    pipe_lr = joblib.load(open("text_emotion.pkl", "rb"))
+
+    emotions_emoji_dict = {
+        "anger": "😠", "disgust": "🤮", "fear": "😨😱", "happy": "🤗", "joy": "😂",
+        "neutral": "😐", "sad": "😔", "sadness": "😔", "shame": "😳", "surprise": "😮"
+    }
+
+
+    def predict_emotions(docx):
+        results = pipe_lr.predict([docx])
+        return results[0]
+
+
+    def get_prediction_proba(docx):
+        results = pipe_lr.predict_proba([docx])
+        return results
+
+
+    st.markdown("""
+             <style>
+             .center-header {
+                 font-size: 50px;
+                 color: #4CAF50;
+                 font-weight: bold;
+                 text-align: center;
+             }
+             </style>
+             <p class="center-header">Text Emotion Detection</p>
+         """, unsafe_allow_html=True)
+
+    st.markdown('<p class="big-font">Text Emotion Detection</p>', unsafe_allow_html=True)
+    st.subheader("Discover the emotion behind the text 📝")
+
+    with st.form(key='my_form'):
+        raw_text = st.text_area("Type your text here", height=200)
+        submit_text = st.form_submit_button(label='Submit')
+
+    if submit_text:
+        col1, col2 = st.columns(2)
+        prediction = predict_emotions(raw_text)
+        probability = get_prediction_proba(raw_text)
+
+        with col1:
+            st.success("Original Text")
+            st.write(raw_text)
+
+            st.success("Emotion Prediction")
+            emoji_icon = emotions_emoji_dict.get(prediction, "😐")
+            st.markdown(f"""
+                     <div style="font-size: 100px; text-align: center;">
+                         {emoji_icon}
+                     </div>
+                     <h2 style="text-align: center;">{prediction.capitalize()}</h2>
+                 """, unsafe_allow_html=True)
+
+        with col2:
+            st.success("Probability Score")
+            prediction_df = pd.DataFrame(probability, columns=pipe_lr.classes_)
+            st.write(prediction_df)
+
+            st.success("Emoji Analysis")
+            emoji_frequency = dict(zip(pipe_lr.classes_, probability[0]))
+            emoji_icons = [emotions_emoji_dict.get(emotion, "😐") for emotion in pipe_lr.classes_]
+            st.bar_chart(emoji_frequency)
+
+    st.markdown("---")
