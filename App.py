@@ -1,16 +1,19 @@
-from PIL import Image
 import streamlit as st
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
+import Helper
+from PIL import Image
 from auth import signup_user, login_user, reset_password
 from Preprocessor import preprocess
 from Helper import fetch_stats
-import Helper
+from wordcloud import WordCloud
+import labels
 import numpy as np
 import altair as alt
+import sklearn
 import joblib
 import os
 
@@ -324,82 +327,323 @@ elif page == "Analysis":
                 ax.spines[axis].set_zorder(5)
             st.pyplot(fig)
 
-            # finding the busiest users  in the group
+             # finding the busiest users  in the group
             if Selected_user == 'overall':
                 st.title('Most Busy User')
                 x = Helper.most_busy_users(df)
-                fig, ax = plt.subplots()
+                # Check if the data is empty
+                if x.empty:
+                    st.error("No data available to analyze most busy users.")
+                else:
+                   # Styling for the section using HTML & CSS
+                   st.markdown("""
+                    <style>
+                            .busy-users-title {
+                                font-size: 28px;
+                                color: #FF6F61;
+                                font-weight: bold;
+                                text-align: center;
+                                margin-bottom: 20px;
+                            }
+                            .chart-container {
+                                padding: 15px;
+                                background: linear-gradient(145deg, #f7f7f7, #e6e6e6);
+                                border-radius: 15px;
+                                box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1), -5px -5px 15px rgba(255, 255, 255, 0.5);
+                                margin: 20px auto;
+                            }
+                    </style>
+                    """, unsafe_allow_html=True)
 
-                col1, col2 = st.columns(2)
+                  # Create a layout with two columns
+                col1, col2 = st.columns([3, 1])
 
+                # Left column: Display bar chart
                 with col1:
-                    ax.bar(x.index, x.values, color='red')
-                    plt.xticks(rotation='vertical')
+                    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+
+                    # Plotting bar chart
+                    fig, ax = plt.subplots(figsize=(10, 6))  # Adjusted size for clarity
+                    bar_colors = plt.cm.coolwarm(x.values / max(x.values))  # Dynamic colors based on values
+                    ax.bar(x.index, x.values, color=bar_colors, edgecolor='black', linewidth=0.7)
+
+                        # Styling the chart
+                    ax.set_title("Most Active Users", fontsize=16, fontweight='bold', color='#333')
+                    ax.set_xlabel("Users", fontsize=12, labelpad=10)
+                    ax.set_ylabel("Message Count", fontsize=12, labelpad=10)
+                    ax.tick_params(axis='x', rotation=45, labelsize=10)
+                    ax.tick_params(axis='y', labelsize=10)
+                    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+                    # Display the chart
                     st.pyplot(fig)
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                       # Right column: Additional insights
+                with col2:
+                    st.subheader("📈 Insights")
+                    st.markdown(f"""
+                        - **Most Active User:** {x.index[0]}
+                        - **Messages Sent:** {x.values[0]}
+                        - **Total Users Analyzed:** {len(x)}
+                        """)
+                    st.image("activity_icon.jpeg")
+
+
+
 
             # Word Cloud
-            st.title('Wordcloud')
+            st.title("🎨 Word Cloud Analysis")
+
+            # Generate Word Cloud using Helper function
             df_wc = Helper.create_wordcloud(Selected_user, df)
-            fig, ax = plt.subplots()
-            ax.imshow(df_wc)
-            st.pyplot(fig)
+
+            # Styling for Word Cloud Section
+            st.markdown("""
+                    <style>
+                    .wordcloud-title {
+                        font-size: 28px;
+                        color: #FF6F61;
+                        font-weight: bold;
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+                    .wordcloud-container {
+                        padding: 15px;
+                        background: linear-gradient(145deg, #f7f7f7, #e6e6e6);
+                        border-radius: 15px;
+                        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1), -5px -5px 15px rgba(255, 255, 255, 0.5);
+                        margin: 20px auto;
+                    }
+                    </style>
+                    <div class="wordcloud-title">Word Cloud Representation</div>
+                 """, unsafe_allow_html=True)
+
+                  # Set up a layout with two columns
+            col1, col2 = st.columns([2, 1])
+
+                # Display Word Cloud
+            if df_wc:
+                with col1:
+                 st.markdown('<div class="wordcloud-container">', unsafe_allow_html=True)
+                 fig, ax = plt.subplots(figsize=(10, 6))  # Adjust size for better visualization
+                 ax.imshow(df_wc, interpolation='bilinear')
+                 ax.axis("off")  # Hide axes for a cleaner look
+                 st.pyplot(fig)
+                 st.markdown('</div>', unsafe_allow_html=True)
+
+                 # Optional: Display additional info or controls in the second column
+                with col2:
+                 st.markdown("""
+                 **What is a Word Cloud?**
+                   A word cloud visually represents frequently used words in your data.
+
+                   **Usage Tips:**
+                    - Highlight important terms at a glance.
+                    - Understand key topics or sentiments quickly.
+                    """)
+            else:
+                st.error("No data available to generate a Word Cloud.")
+
+
 
             # most common words
             most_common_df = Helper.most_common_words(Selected_user, df)
-
             fig, ax = plt.subplots()
-
             ax.barh(most_common_df[0], most_common_df[1])
-
             plt.xticks(rotation='vertical')
-
-            st.title('Most commmon words')
+            st.title('Most common words')
             st.pyplot(fig)
 
             # Emoji analysis
 
             # helper.emoji_helper returns a list of emojis and their counts
             emoji_df = Helper.emoji_helper(Selected_user, df)
-
             st.title("Emoji Analysis")
-            st.image('91636.jpg', width=700)
+            st.image('91636.jpg', width=700,caption="Emoji Insights")
 
             # Define specific colors for the top 5 emojis
-            color_mapping = {
-                0: 'red',  # Color for the 1st top emoji
-                1: 'blue',  # Color for the 2nd top emoji
-                2: 'green',  # Color for the 3rd top emoji
-                3: 'orange',  # Color for the 4th top emoji
-                4: 'violet',  # Color for the 5th top emoji
-            }
+            color_mapping = ['Red', 'Blue', 'Pink', 'Purple', 'Yellow']
+
+            st.markdown("""
+                <style>
+                    .emoji-title {
+                        color: #2E3A59;
+                        font-size: 28px;
+                        font-weight: bold;
+                        text-align: center;
+                    }
+                    .emoji-card {
+                        padding: 15px;
+                        border-radius: 10px;
+                        background: linear-gradient(145deg, #f7f7f7, #e6e6e6);
+                        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.5);
+                        margin-top: 20px;
+                    }
+                    .emoji-chart-container {
+                        padding: 15px;
+                        border-radius: 10px;
+                        border: 2px solid #FF6F61; /* Border around the pie chart */
+                        background: #fff;
+                        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.3);
+                    }
+                    .dataframe-style {
+                        margin-top: 20px;
+                        border: 2px solid #FF6F61;
+                        border-radius: 10px;
+                        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+                    }
+                </style>
+                """, unsafe_allow_html=True)
+
+
+
             # Create two columns for the display
             col1, col2 = st.columns(2)
 
-            with col1:
-                # Create a DataFrame for the top 5 emojis and their colors
-                if not emoji_df.empty:
-                    # Get top 5 emojis by count
-                    top_emojis = emoji_df.nlargest(5, 'Count')
+            if not emoji_df.empty:
+                # Get top 5 emojis by count
+             top_emojis = emoji_df.nlargest(5, 'Count')
 
-                    # Assign colors from the color mapping
-                    top_emojis['Color'] = [color_mapping[i] for i in range(len(top_emojis))]
+            # Assign colors from the color mapping
+             top_emojis['Color'] = [color_mapping[i] for i in range(len(top_emojis))]
 
-                    # Display the emoji dataframe in the first column
-                    st.dataframe(top_emojis[['Emoji', 'Count', 'Color']])
 
-            with col2:
+             with col1:
+                st.markdown('<div class="emoji-card"><h3 style="color:#FF6F61;">Top 5 Emojis</h3></div>',
+                                unsafe_allow_html=True)
+                styled_df = top_emojis[['Emoji', 'Count', 'Color']]
+                st.dataframe(styled_df.style.highlight_max(subset=['Count'], color='#FF6F61', axis=0))
+
+             with col2:
                 # Create a pie chart in the second column
-                if not emoji_df.empty:
-                    fig, ax = plt.subplots()
+                st.markdown('<div class="emoji-chart-container">', unsafe_allow_html=True)
+                st.subheader("Emoji Usage Distribution")
+                fig, ax = plt.subplots(figsize=(6, 6))
 
-                    # Extract colors for the top 5 emojis
-                    colors = top_emojis['Color'].tolist()
+                # Plotting the pie chart for the top 5 emojis
+                labels = [f"Emoji {i }" for i in range(len(top_emojis))]
+                ax.pie(
+                   top_emojis['Count'],
+                   labels=labels,
+                   autopct='%1.1f%%',
+                   colors=top_emojis['Color'],
+                   wedgeprops={'edgecolor': 'black', 'linewidth': 1.5},  # Add border to the pie slices
+                   textprops={'fontsize': 14, 'color': 'black'}
+                )
+                ax.set_title("Top Emojis", fontsize=18, color='#2E3A59')
+                st.pyplot(fig)
+                st.markdown('</div>', unsafe_allow_html=True)
 
-                    # Plotting the top 5 emojis by count
-                    ax.pie(top_emojis['Count'], autopct='%1.1f%%', colors=colors)
+            else:
+                st.write("No emojis found for the Selected User.")
+
+
+
+
+               # Set up custom CSS for styling
+                st.markdown("""
+                    <style>
+                    /* Body Styling */
+                    body {
+                        background-color: #f0f4f8;
+                        font-family: 'Arial', sans-serif;
+                    }
+                    .title {
+                        color: #FF6F61;
+                        font-size: 36px;
+                        font-weight: bold;
+                        text-align: center;
+                        padding-bottom: 20px;
+                    }
+                    .sentiment-title {
+                        color: #2E3A59;
+                        font-size: 26px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    }
+                    .sentiment-description {
+                        font-size: 18px;
+                        color: #7F8C8D;
+                        margin-bottom: 30px;
+                    }
+                    .sentiment-card {
+                        padding: 15px;
+                        border-radius: 10px;
+                        background: linear-gradient(145deg, #f6f7f9, #e2e8f0);
+                        box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1), -3px -3px 6px rgba(255, 255, 255, 0.3);
+                        margin-top: 20px;
+                    }
+                    .sentiment-card h3 {
+                        font-size: 20px;
+                        color: #FF6F61;
+                    }
+                    .sentiment-chart {
+                        padding: 15px;
+                        border-radius: 10px;
+                        border: 2px solid #FF6F61;  /* Add border to the chart */
+                        background-color: #fff;
+                        box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1);
+                    }
+                    .pie-chart {
+                        border-radius: 10px;
+                        border: 2px solid #FF6F61;  /* Add border to the pie chart */
+                    }
+                    .sentiment-bar {
+                        color: #FF6F61;
+                    }
+                    .sentiment-label {
+                        font-size: 14px;
+                        color: #FF6F61;
+                    }
+                    .chart-container {
+                        margin-top: 30px;
+                    }
+                   </style>
+                   """, unsafe_allow_html=True)
+
+
+
+
+
+            # Sentiment Analysis
+            st.header("Sentiment Analysis")
+            sentiment_df = Helper.sentiment_analysis(Selected_user, df)
+
+            if not sentiment_df.empty:
+                col1, col2 = st.columns(2)
+
+                # Sentiment count and pie chart generation
+                sentiment_counts = sentiment_df['sentiment'].value_counts()
+
+                # Display overall sentiment counts
+                with col2:
+                    sentiment_html = """
+                       '<br><br><p style="font-family:Roboto; color:#FF6F61; font-size: 20px; font-weight: bold">Sentiment Distribution </p>'
+
+                        """
+                # Display the sentiment distribution bar chart
+                    st.markdown(sentiment_html, unsafe_allow_html=True)
+                    st.markdown('<div class="sentiment-chart">', unsafe_allow_html=True)
+                    st.bar_chart(sentiment_counts, use_container_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+
+                # Display sentiment percentages
+                with col1:
+                    st.markdown('<div class="sentiment-chart pie-chart">', unsafe_allow_html=True)
+                    st.subheader("Sentiment Percentage")
+                    fig, ax = plt.subplots(figsize=(6, 6))
+                    sentiment_counts.plot.pie(
+                        autopct='%1.1f%%', labels=sentiment_counts.index, ax=ax,
+                        colors=['#FF6F61', '#7F8C8A', '#8A2BE2']
+                    )
+                    ax.set_ylabel("")  # Hide y-axis label
+                    ax.set_title("Sentiment Breakdown", fontsize=18, color='#2E3A67')
                     st.pyplot(fig)
-                else:
-                    st.write("No emojis found for the Selected User.")
+                    st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.error("No sentiment data available for the selected user.")
 
             # Create a DataFrame for the analysis results to download
             analysis_results = {
