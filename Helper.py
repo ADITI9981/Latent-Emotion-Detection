@@ -2,6 +2,7 @@ import pandas as pd
 from urlextract import URLExtract
 from wordcloud import WordCloud
 from collections import Counter
+from textblob import TextBlob
 import emoji
 
 extract = URLExtract()
@@ -150,3 +151,22 @@ def activity_heatmap(Selected_user, df):
 
 
     return user_heatmap
+
+
+
+def sentiment_analysis(Selected_user, df):
+    if Selected_user !='overall':
+        df = df[df['user'] == Selected_user]
+
+    sentiments = []
+    for message in df['message']:
+        polarity = TextBlob(message).sentiment.polarity
+        if polarity > 0:
+            sentiments.append('positive')
+        elif polarity == 0:
+            sentiments.append('neutral')
+        else:
+            sentiments.append('negative')
+
+    df['sentiment'] = sentiments
+    return df
