@@ -55,4 +55,5 @@ python app.py
 Open your browser and visit http://localhost:5000 to start detecting emotions in your text!
 
 ![Screenshot 2024-12-12 124943](https://github.com/user-attachments/assets/cef6a943-9dff-4f39-afc1-88202ce52f3a)
+![Screenshot 2024-12-12 125918](https://github.com/user-attachments/assets/06e3de70-b504-40cf-82a2-adadd1a91c84)
 
